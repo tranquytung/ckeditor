@@ -1,0 +1,32 @@
+<style>
+    .item-device{
+        pointer-events: none;
+        cursor: default;
+        text-decoration:none;
+        color: black;
+    }
+</style>
+
+<div class="content"></div>
+<script id="entry-template" type="text/x-handlebars-template">
+    {{{ code }}}
+</script>
+<script>
+    $(document).ready(()=>{
+        let source   = document.getElementById("entry-template").innerHTML;
+        let template = Handlebars.compile(source);
+        let data = JSON.parse('{{{ data }}}');
+        $('.content').html(template(data));
+
+        $('.item-device').each(function() {
+            let style = $(this).html().match(/style="([^"]*)/gi);
+            if(style){
+                style.map(x => x.substring(7, x.length-1)).join(';');
+            }
+            $(this).attr('style', style);
+            $(this).text($(this).attr('data-source'));
+        });
+
+    });
+
+</script>

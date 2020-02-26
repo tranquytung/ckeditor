@@ -1,0 +1,71 @@
+<style>
+   .item-device{
+       pointer-events: none;
+       cursor: default;
+       text-decoration:none;
+       color: black;
+   }
+</style>
+<div class="container">
+    <h1>Danh sách trang</h1>
+    <a href="/home" class="btn btn-primary" style="margin-top: 10px"><i class="fa fa-plus"></i> Create</a>
+    <table class="table" style="margin-top: 20px">
+        <thead>
+        <tr>
+            <th style="width: 5%">#</th>
+            <th style="width: 60%">Name</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">View</th>
+            <th class="text-center">Edit</th>
+            <th class="text-center">Delete</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{#each data}}
+            <tr id="{{_id}}">
+                <th scope="row">{{inc @index}}</th>
+                <td>{{_source.name}}</td>
+                <td class="text-center">
+
+                    {{#if _source.status}}
+                        <input type="checkbox" checked data-toggle="toggle" data-size="small">
+                    {{else}}
+                        <input type="checkbox" data-toggle="toggle" data-size="small">
+                    {{/if}}
+                </td>
+                <td class="text-center"><a href="/page/{{_source.path}}" class="btn btn-success btn-sm"><i class="fa fa-folder-open"></i></a></td>
+                <td class="text-center"><a href="/home/{{_source.path}}" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i></a></td>
+                <td class="text-center"><a class="btn btn-danger btn-sm btnDelete"><i class="fa fa-remove" aria-hidden="true"></i></a></td>
+            </tr>
+        {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('.btnDelete').on('click', function (e) {
+            let tr = e.target.parentElement.parentElement;
+            let id = tr.id;
+            $.ajax({
+                url: '/delete',
+                type:'delete',
+                dataType: 'json',
+                data:{
+                    id: id,
+                },
+                success: (result)=>{
+                    if(result.success){
+                        $(tr).remove();
+                        toastr.success(result.success);
+                    }
+                },
+                error: function(request, status, error){
+                    //toastr.error(error);
+                    console.log(error);
+                }
+            });
+        });
+
+    })
+</script>

@@ -1,0 +1,170 @@
+<style>
+    .cke_dialog_ui_input_select{
+        width: 600px !important;
+    }
+</style>
+<div class="row" style="margin-bottom: 10px">
+    <div class="col-md-12">
+        <h1>DASHBOARD EDITOR NET DEVICE</h1>
+        <input type="hidden" value="{{obj.id}}" id="id">
+    </div>
+</div>
+<div class="row" style="margin-bottom: 20px">
+    <div class="col-md-4">
+        <div class="form-group">
+            <label class="col-sm-2 control-label">Name :</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="txtDeviceName" name="txtDeviceName" value="{{obj.name}}">
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group" >
+            <label class="col-sm-3 control-label">Status :</label>
+            <label class="col-sm-4 control-label">
+                <input type="radio" name="opt" value="true" checked>&nbsp;Hoạt Động</label>
+            <label class="col-sm-5 control-label">
+                <input type="radio" name="opt" value="false" {{#unless obj.status}}checked{{/unless}}>&nbsp;Không Hoạt Động</label>
+        </div>
+    </div>
+    <div class="col-md-4">
+       <!-- <input type="button" class="btn btn-primary btn-sm" value="Save" id="btnSave">-->
+        <button class="btn btn-primary" id="btnSave"><i class="fa fa-save"> Save</i></button>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <textarea name="dashboard_editor" id="editor1"></textarea>
+    </div>
+</div>
+<script>
+    /*
+    * devices la data cua show device
+    * */
+
+    var devices ={{{device}}};
+
+    $(document).ready(function () {
+
+        /*
+        * replace: la replace lai file config.js xem ckeditor k cho hien full
+        * extraPlugins : la nhung plugin can dung
+        * */
+        var editor = CKEDITOR.replace( 'dashboard_editor', {
+            height: 600,
+            extraPlugins: 'showdevice, autocomplete,textmatch,easyimage,sourcearea,toolbar,undo,wysiwygarea,basicstyles,tableresize',
+            toolbar: [
+                { name: 'document', items: [ 'Source', 'Undo', 'Redo' ] },
+                { name: 'showdevice', items: ['showdevice']},
+                { name: 'tools', items: [ 'Maximize', 'ShowBlocks' ] },
+                { name: 'basicstyles', items: ['Colors','Font','FontSize','Bold', 'Italic', 'Strike','Link'] },
+                { name: 'colors', items : ['TextColor', 'BGColor']},
+                { name: 'insert', items: [ 'Image','Table', 'HorizontalRule','PageBreak'] },
+                { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi' ],
+                    items: [ 'NumberedList', 'BulletedList','Indent', 'Blockquote', 'JustifyLeft',
+                        'JustifyCenter', 'JustifyRight','JustifyBlock'] },
+            ],
+            removePlugins : 'easyimage, cloudservices', // Fix CKEDITOR Error code: cloudservices-no-token-url,
+            allowedContent: true,
+            uiColor : '#f7f61c',
+            contentsCss: ["body {font-size: 18px;}"],
+            font_defaultLabel:'Times New Roman'
+        });
+
+        /*
+        * on change in plugin showDialogDevice
+        * */
+
+        editor.on('dllDevice_Onchage', (req)=>{
+
+            let id = req.data.device_id;
+
+            let list ={
+                "id": id
+            };
+
+            $.ajax({
+                url: '/getId',
+                dataType:"json",
+                //contentType:"application/json",
+                type:"POST",
+                data:list,
+                success: (request)=>{
+                    if(request.data){
+                        let jsonData = request.data;
+
+                        $("#devicetree-properties").jstree("destroy");
+                        $('#devicetree-properties').jstree('deselect_all');
+
+                        $('#devicetree-properties').on('changed.jstree', function (e, data) {
+                            var objNode = data.instance.get_node(data.selected);
+                            $('#jstree-result').html('Selected: <br/><strong>' + objNode.id+'-'+objNode.text+'</strong>');
+                        }).jstree({
+                            core: {
+                                data: jsonData
+                            }/*,
+                            'checkbox': {
+                                three_state: false,
+                                cascade: 'up'
+                            },
+                            'plugins': ["checkbox"]*/
+                        });
+                    }else if(request.error){
+                        toastr.error(request.error);
+                    }
+                },
+                error: function(request, status, error){
+                    console.log(error);
+                }
+            });
+        });
+
+        /*
+        *  customs double click show man hinh dialog
+        * */
+        editor.on( 'doubleclick', function( evt )
+        {
+            let element = evt.data.element;
+            if ( element.is( 'a' ) || element.is( 'span' )){
+                evt.data.dialog = 'showdeviceDialog';
+            }
+        },null,null,100);
+
+        $('#btnSave').on('click',function () {
+            let val = editor.getData();
+            let id = $('#id').val();
+            let name = $('#txtDeviceName').val();
+            let status = $("input[name='opt']:checked").val();
+            if(name){
+                $.ajax({
+                    url: '/save',
+                    dataType:"json",
+                    //contentType:"application/json",
+                    type:"POST",
+                    data:{
+                        id: id,
+                        name: name,
+                        content: val,
+                        status:status
+                    },
+                    success: (request)=>{
+                        if(request.success){
+                            toastr.success(request.success);
+                            setTimeout(function () {
+                                location.href = 'http://localhost:6969/view';
+                            },1000);
+                        }else if(request.error) {
+                            toastr.error(request.error);
+                        }
+                    },
+                    error: function(request, status, error){
+                        console.log(error);
+                    }
+                });
+            }else {
+                toastr.error("Name is not empty!");
+            }
+        });
+        editor.setData({{{content}}})
+    });
+</script>
